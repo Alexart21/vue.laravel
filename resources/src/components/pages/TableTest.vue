@@ -1,40 +1,50 @@
 <template>
-  <h1>Table test</h1>
+  <h1>Тест бронирования</h1>
   <div v-if="table.length">
-    <table class="test-table cursor" ref="testTbl">
+    <table class="test-table" ref="testTbl">
       <h4 style="text-align: center">Выберите время</h4>
       <tr v-for="(row, rowIndex) in table" :key="rowIndex">
         <td v-for="(item, itemIndex) in row" :id="String(rowIndex) + String(itemIndex)" :key="itemIndex"
-            :class="[!item?.string ? 'data-td' : 'data-h']"
-            @click="select((String(rowIndex) + String(itemIndex)), row[0].string, item)">{{ item?.string ?? item }}
+            :class="[!item?.string ? 'data-td' : 'data-h', item.isActive ? 'cursor' : '', item.isActive ? '' : !item?.string ? 'passive' : '']"
+            @click="select(rowIndex, itemIndex)">{{ item?.string ?? item?.time }}
         </td>
       </tr>
     </table>
+    <div v-if="statusText" :style="{color: isOk ? 'green' : 'red'}">{{ statusText }}</div>
     <div v-if="selected">
-      <p>Выбрано: <b>{{ selected }}</b></p>
+      <p>Выбрано: <b>{{ selectedText }}</b></p>
       <button @click="clear()">отменить</button>
       <br>
-      <button style="background: green;color: #fff">подтвердить</button><span>(не реализовано)</span>
+      <button @click="setOrder()" style="background: green;color: #fff">бронировать</button>
+      <span> (отправка на сервер не реализована)</span>
     </div>
   </div>
   <div v-else>загрузка данных...</div>
   <hr>
   <h2>Реализация админки</h2>
   <p>(в режиме contenteditable)</p>
-  <p>Для удаленмя ячейки удалить ее содержимое и нажать сохранить</p>
+  <p>Для удаленмя ячейки удалить ее содержимое и нажать сохранить, изменить статус - doubleclick</p>
   <table class="test-table" ref="testTblAdmin">
     <tr v-for="(row, rowIndex) in tableAdmin" :key="rowIndex">
       <template v-for="(item, itemIndex) in row" :key="itemIndex">
-        <td v-if="itemIndex === 0"><datepicker
-          v-model="picked[rowIndex]"
-          :locale="locale"
-          :inputFormat="inputFormat"
-          class="data"
-        /></td>
-        <td v-else :id="'adm' + String(rowIndex) + String(itemIndex)" contenteditable="" class="data data-td">{{ item }}</td>
+        <td v-if="itemIndex === 0">
+          <datepicker
+            v-model="picked[rowIndex]"
+            :locale="locale"
+            :inputFormat="inputFormat"
+            class="data"
+          />
+        </td>
+        <td v-else :id="'adm' + String(rowIndex) + String(itemIndex)" @dblclick="changeStatus(rowIndex, itemIndex)"
+            :contenteditable="item.isActive" class="data data-td" :class="item.isActive ? '' : 'passive'">{{ item.time }}
+        </td>
         <template v-if="itemIndex === tableAdmin[rowIndex].length - 1">
-          &nbsp;&nbsp;<td><button @click="addCell(rowIndex)" class="add">добавить ячейку</button></td>
-          <td><button @click="delRow(rowIndex)" class="del">удалить строку</button></td>
+          &nbsp;&nbsp;<td>
+          <button @click="addCell(rowIndex)" class="add">добавить ячейку</button>
+        </td>
+          <td>
+            <button @click="delRow(rowIndex)" class="del">удалить строку</button>
+          </td>
         </template>
 
       </template>
@@ -49,6 +59,7 @@
 <script>
 import {id, ru} from 'date-fns/locale'
 import Datepicker from "vue3-datepicker";
+
 export default {
   components: {
     Datepicker,
@@ -57,7 +68,8 @@ export default {
     return {
       table: [],
       tableAdmin: [],
-      selected: '',
+      selected: null,
+      selectedText: '',
       token: '',
       tokenType: '',
       picked: [],
@@ -86,7 +98,7 @@ export default {
         this.table = result.data;
         this.tableAdmin = this.table.slice(); // независимая копия
       } else {
-        if(response.status == 401){
+        if (response.status == 401) {
           this.isOk = false;
           this.statusText = 'Требуется авторизация!';
         }
@@ -95,31 +107,49 @@ export default {
       }
     },
     clear() {
-      this.selected = '';
+      this.selected = null;
+      this.selectedText = '';
+      this.statusText = '';
       let tds = this.$refs.testTbl.getElementsByTagName('td');
       for (let td of tds) {
         td.classList.remove('selected');
       }
 
     },
-    select(id, day, hours) {
-      if(typeof hours === 'string'){
-        this.clear();
-        document.getElementById(id).classList.add('selected')
-        this.selected = `${day} ${hours}`;
+    select(rowIndex, itemIndex) {
+      if (this.table[rowIndex][itemIndex].isActive) {
+          this.clear();
+          document.getElementById(String(rowIndex) + String(itemIndex)).classList.add('selected');
+          this.selected = {
+            row: rowIndex,
+            item: itemIndex
+          };
+        this.selectedText = `${this.table[rowIndex][0].string} ${this.table[rowIndex][itemIndex].time}`;
       }
     },
-    addRow(){
-      let row = this.tableAdmin[0] ?? ['00:00 - 00:00','00:00 - 00:00','00:00 - 00:00','00:00 - 00:00','00:00 - 00:00'];
+    setOrder(){
+      if(this.selected){
+        console.log('bron');
+        this.table[this.selected.row][this.selected.item].isActive = false;
+        this.statusText = 'забронировано';
+      }
+    },
+    addRow() {
+      let row = this.tableAdmin[0] ?? [{time: '00:00 - 00:00', isActive: true}, {time: '00:00 - 00:00', isActive: true}, {time: '00:00 - 00:00', isActive: true}, {time: '00:00 - 00:00', isActive: true}, {time: '00:00 - 00:00', isActive: true}];
       this.tableAdmin.push(row);
     },
-    delRow(index){
+    delRow(index) {
       this.tableAdmin.splice(index, 1);
+      this.picked.splice(index, 1);
     },
-    addCell(index){
-      this.tableAdmin[index].push('');
+    addCell(index) {
+      this.tableAdmin[index].push({isActive: true, time: '00:00 - 00:00'});
     },
-    async save(){
+    changeStatus(rowIndex, itemIndex) {
+      console.log('change status');
+      this.tableAdmin[rowIndex][itemIndex].isActive = !this.tableAdmin[rowIndex][itemIndex].isActive;
+    },
+    async save() {
       // console.log(this.picked);
       this.isOk = true;
       this.statusText = '';
@@ -129,27 +159,32 @@ export default {
       trs = Array.from(trs);
       let i = 0;
       trs.map((tr) => {
-        let tds =  tr.getElementsByClassName('data');
+        let tds = tr.getElementsByClassName('data');
         tds = Array.from(tds);
         result[i] = [];
         let j = 0;
         tds.map((td) => {
-          let val = td.innerText;
-          if(val === '' && j === 0){ // ячейка с датой
-            try{
-              val = {}
-              val.string = this.picked[i].toLocaleString('ru', {  weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+          let val = {};
+          if (td.innerText === '' && j === 0) { // ячейка с датой
+            try {
+              val.string = this.picked[i].toLocaleString('ru', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+              });
               val.timestamp = Date.parse(this.picked[i])
-              console.log(val);
               // console.log(val);
-            }catch (e) {
+            } catch (e) {
               this.isOk = false;
               this.statusText = 'Не выбрана дата!';
               return;
             }
-          }else{
+          } else {
+            val.time = td.innerText;
+            val.isActive = this.tableAdmin[i][j].isActive;
             let id = td.getAttribute('id');
-            if(id){ //
+            if (id) { //
               idArr.push(id) // создаем массив с id ячеек со временем
             }
           }
@@ -158,21 +193,23 @@ export default {
         });
         i++;
       });
+      // console.log(result);
+      // return;
       // в новый массив без пустых ячеек
       let newArr = [];
       i = 0;
       result.map((row) => {
-        let newRow = row.filter((td) => {
-          return  td instanceof Object || td.length;
+        let newRow = row.filter((item) => {
+          return item.timestamp || item.time;
         })
-        if(newRow.length){
+        if (newRow.length) {
           newArr.push(newRow);
         }
       });
-      this.tableAdmin = newArr.slice(); // независимая копия
+      // this.tableAdmin = newArr.slice(); // независимая копия
       // console.log(newArr)
       // проверим соответствие введенных данных регулярке
-      const inputPattern = /^([0-1][0-9]|[2][0-3]):([0-5][0-9]) - ([0-1][0-9]|[2][0-3]):([0-5][0-9])$/;
+      /*const inputPattern = /^([0-1][0-9]|[2][0-3]):([0-5][0-9]) - ([0-1][0-9]|[2][0-3]):([0-5][0-9])$/;
       let errFlag = false;
       idArr.map((id) => {
         let el = document.getElementById(id);
@@ -190,8 +227,8 @@ export default {
         this.isOk = false;
         this.statusText = 'Вводите время работы по шаблону 08:00[пробел]-[пробел] 09:00';
         return;
-      }
-      if(!this.isOk) return;
+      }*/
+      if (!this.isOk) return;
       // массив готов отправлчем
       let url = '/api/save';
       let response = await fetch(url, {
@@ -220,10 +257,10 @@ export default {
   },
   watch: {
     table: {
-      handler(){
-        if(this.table.length){
+      handler() {
+        if (this.table.length) {
           console.log(this.table)
-          for (let i =0; i < this.table.length; i++){
+          for (let i = 0; i < this.table.length; i++) {
             // this.picked[i] = this.table[i][0];
             this.picked[i] = new Date(this.table[i][0].timestamp);
           }
@@ -249,7 +286,13 @@ export default {
   font-weight: bold;
   padding-right: 1em;
 }
-.cursor{
+
+.passive{
+  background: #ddd;
+  color: #fff;
+}
+
+.cursor {
   cursor: pointer;
 }
 
@@ -259,11 +302,11 @@ export default {
   font-weight: bold;
 }
 
-.add{
+.add {
   color: blue;
 }
 
-.del{
+.del {
   color: red;
 }
 </style>

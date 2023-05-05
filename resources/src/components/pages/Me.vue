@@ -2,7 +2,7 @@
   <h1>Test access</h1>
   <span v-if="loader">loader...</span>
   <button @click="send()">test</button>
-  <div v-if="statusText" :class="[isOk ? 'success' : 'danger']">{{ statusText }}</div>
+  <div v-if="alertMsg" :class="[isOk ? 'success' : 'danger']">{{ alertMsg }}</div>
   <div v-if="user">
     <p>{{ user.name }}</p>
     <p>{{ user.email }}</p>
@@ -10,21 +10,21 @@
 </template>
 <script>
 import axios from "axios";
-import { mapActions } from "vuex";
+import {mapMutations, mapActions, mapState} from "vuex";
 
 export default {
   data() {
     return {
       loader: false,
-      isOk: true,
-      statusText: '',
       user: null
     }
   },
   methods: {
+    ...mapMutations(['clearMsgs']),
+    ...mapActions(['alert']),
     async send() {
       this.loader = true;
-      this.statusText = '';
+      this.clearMsgs();
       this.user = null;
       let url = '/api/auth/me';
       let token = localStorage.getItem('access_token');
@@ -38,21 +38,24 @@ export default {
         },
       })
         .then((response) => {
-          this.isOk = true;
-          this.statusText = 'Ok';
+          this.alert({type: 'success', msg: 'Ok!'});
           console.log(response);
           // console.log(response.data);
           this.user = response.data;
         })
         .catch((err) => {
           console.log(err);
-          this.isOk = false;
-          this.statusText = err.message;
+          this.alert({type: 'error', msg: err.message});
         })
       this.loader = false;
     }
-  }
+  },
+  computed: {
+    ...mapState(['isOk', 'alertMsg'])
+  },
+  mounted() {
 
+  }
 }
 </script>
 

@@ -2,25 +2,24 @@
   <h1>Logout test</h1>
   <span v-if="loader">loader...</span>
   <button @click="logout()">logout</button>
-  <div v-if="statusText" :class="[isOk ? 'success' : 'danger']">{{ statusText }}</div>
+  <div v-if="alertMsg" :class="[isOk ? 'success' : 'danger']">{{ alertMsg }}</div>
 </template>
 
 <script>
-import {mapMutations} from "vuex";
+import {mapMutations, mapActions, mapState} from "vuex";
 
 export default {
   data() {
     return {
-      isOk: true,
       loader: false,
-      statusText: ''
     }
   },
   methods: {
+    ...mapMutations(['clearMsgs']),
     ...mapMutations('users', ['setGuest']),
+    ...mapActions(['alert']),
     async logout() {
       this.loader = true;
-      this.statusText = '';
       let url = '/api/auth/logout';
       let token = localStorage.getItem('access_token');
       let tokenType = localStorage.getItem('token_type');
@@ -34,22 +33,23 @@ export default {
       if (response.ok) {
         let result = await response.json();
         if (result.success) {
-          this.isOk = true;
-          this.statusText = 'Logout ok!';
+          this.alert({type: 'success', msg: 'Logout ok!'});
           this.setGuest();
         } else {
           console.log('Her znaet chego...')
         }
       } else {
-        this.isOk = false;
-        this.statusText = `${response.code} ${response.statusText}`;
+        this.alert({type: 'error', msg: `${response.status} ${response.statusText}`});
       }
       this.loader = false;
     }
   },
   computed: {
-    // ...mapState('users', ['user'])
+    ...mapState(['isOk', 'alertMsg'])
   },
+  mounted() {
+
+  }
 }
 </script>
 

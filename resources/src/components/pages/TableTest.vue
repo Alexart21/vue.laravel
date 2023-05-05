@@ -36,7 +36,9 @@
           />
         </td>
         <td v-else :id="'adm' + String(rowIndex) + String(itemIndex)" @dblclick="changeStatus(rowIndex, itemIndex)"
-            :contenteditable="item.isActive" class="data data-td" :class="item.isActive ? '' : 'passive'">{{ item.time }}
+            :contenteditable="item.isActive" class="data data-td" :class="item.isActive ? '' : 'passive'">{{
+            item.time
+          }}
         </td>
         <template v-if="itemIndex === tableAdmin[rowIndex].length - 1">
           &nbsp;&nbsp;<td>
@@ -118,24 +120,29 @@ export default {
     },
     select(rowIndex, itemIndex) {
       if (this.table[rowIndex][itemIndex].isActive) {
-          this.clear();
-          document.getElementById(String(rowIndex) + String(itemIndex)).classList.add('selected');
-          this.selected = {
-            row: rowIndex,
-            item: itemIndex
-          };
+        this.clear();
+        document.getElementById(String(rowIndex) + String(itemIndex)).classList.add('selected');
+        this.selected = {
+          row: rowIndex,
+          item: itemIndex
+        };
         this.selectedText = `${this.table[rowIndex][0].string} ${this.table[rowIndex][itemIndex].time}`;
       }
     },
-    setOrder(){
-      if(this.selected){
-        console.log('bron');
+    setOrder() {
+      if (this.selected) {
         this.table[this.selected.row][this.selected.item].isActive = false;
         this.statusText = 'забронировано';
       }
     },
     addRow() {
-      let row = this.tableAdmin[0] ?? [{time: '00:00 - 00:00', isActive: true}, {time: '00:00 - 00:00', isActive: true}, {time: '00:00 - 00:00', isActive: true}, {time: '00:00 - 00:00', isActive: true}, {time: '00:00 - 00:00', isActive: true}];
+      let row = [{time: '00:00 - 00:00', isActive: true}, {
+        time: '00:00 - 00:00',
+        isActive: true
+      }, {time: '00:00 - 00:00', isActive: true}, {time: '00:00 - 00:00', isActive: true}, {
+        time: '00:00 - 00:00',
+        isActive: true
+      }];
       this.tableAdmin.push(row);
     },
     delRow(index) {
@@ -181,14 +188,19 @@ export default {
               return;
             }
           } else {
-            val.time = td.innerText;
-            val.isActive = this.tableAdmin[i][j].isActive;
-            let id = td.getAttribute('id');
-            if (id) { //
-              idArr.push(id) // создаем массив с id ячеек со временем
+            if (td.innerText) {
+              val.time = td.innerText;
+              val.isActive = this.tableAdmin[i][j].isActive;
+              let id = td.getAttribute('id');
+              if (id) { //
+                idArr.push(id) // создаем массив с id ячеек со временем
+              }
             }
+
           }
-          result[i].push(val);
+          if (val) {
+            result[i].push(val);
+          }
           j++;
         });
         i++;
@@ -209,25 +221,25 @@ export default {
       // this.tableAdmin = newArr.slice(); // независимая копия
       // console.log(newArr)
       // проверим соответствие введенных данных регулярке
-      /*const inputPattern = /^([0-1][0-9]|[2][0-3]):([0-5][0-9]) - ([0-1][0-9]|[2][0-3]):([0-5][0-9])$/;
+      const inputPattern = /^([0-1][0-9]|[2][0-3]):([0-5][0-9]) - ([0-1][0-9]|[2][0-3]):([0-5][0-9])$/;
       let errFlag = false;
       idArr.map((id) => {
         let el = document.getElementById(id);
         let val = el.innerText;
-        if(val){
+        if (val) {
           if (!inputPattern.test(val)) {
             el.style.border = '3px solid red';
             errFlag = true;
-          }else{
+          } else {
             el.style.border = '1px solid blue';
           }
         }
       })
-      if(errFlag){
+      if (errFlag) {
         this.isOk = false;
-        this.statusText = 'Вводите время работы по шаблону 08:00[пробел]-[пробел] 09:00';
+        this.statusText = 'Вводите время работы по шаблону 08:00[пробел]-[пробел]09:00';
         return;
-      }*/
+      }
       if (!this.isOk) return;
       // массив готов отправлчем
       let url = '/api/save';
@@ -259,10 +271,12 @@ export default {
     table: {
       handler() {
         if (this.table.length) {
-          console.log(this.table)
+          // console.log(this.table)
           for (let i = 0; i < this.table.length; i++) {
             // this.picked[i] = this.table[i][0];
-            this.picked[i] = new Date(this.table[i][0].timestamp);
+            if (this.table[i][0].timestamp) {
+              this.picked[i] = new Date(this.table[i][0].timestamp);
+            }
           }
         }
       }
@@ -287,7 +301,7 @@ export default {
   padding-right: 1em;
 }
 
-.passive{
+.passive {
   background: #ddd;
   color: #fff;
 }

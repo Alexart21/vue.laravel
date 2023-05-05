@@ -17,6 +17,19 @@ export default {
     }
   },
   actions: {
+    async newUsers(context){
+      let url = '/users';
+      let formData = new FormData();
+      formData.append('_token', context.rootState.csrf_token);
+      return await fetch(url, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+        },
+        body: formData
+      });
+
+    },
     async getUsers(context) {
       let url = '/users';
       let formData = new FormData();

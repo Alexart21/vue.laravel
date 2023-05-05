@@ -18,24 +18,27 @@
     <br>
     <span v-if="loader">loader...</span>
     <button type="submit">submit</button>
-    <div v-if="statusText" :class="[isOk ? 'success' : 'danger']">{{ statusText }}</div>
+    <div v-if="alertMsg" :class="[isOk ? 'success' : 'danger']">{{ alertMsg }}</div>
   </form>
 </template>
 
 <script>
+import {mapMutations, mapActions, mapState} from "vuex";
+
 export default {
   data() {
     return {
       loader: false,
-      isOk: true,
-      statusText: '',
       errMsgs: {}
     }
   },
   methods: {
+    ...mapMutations(['clearMsgs']),
+    ...mapMutations('users', ['setUser']),
+    ...mapActions(['alert']),
     async send() {
+      this.clearMsgs();
       this.loader = true;
-      this.statusText = '';
       this.errMsgs = {};
       let form = document.forms.registrationForm;
       let formData = new FormData(form);
@@ -49,16 +52,14 @@ export default {
       });
       if (response.ok) {
         let result = await response.json();
-        this.isOk = true;
-        this.statusText = 'Ok';
+        this.alert({type: 'success', msg: 'Ok!'});
         console.log(result);
         // пришел токен сохрани его
       } else {
         if (response.status == 422) { // ошибки валидации
           let result = await response.json();
           let errors = result.errors;
-          this.isOk = false;
-          this.statusText = 'Некорректные данные!';
+          this.alert({type: 'error', msg: 'Некорректные данные!'});
           console.log(errors);
           // далее обрабатываешь массив errors
           for (let key in errors) {
@@ -66,14 +67,19 @@ export default {
           }
           console.log(this.errMsgs)
         } else { // другие ошибки
-          this.isOk = false;
-          this.statusText = `${response.status} ${response.statusText}`;
+          this.alert({type: 'error', msg: `${response.status} ${response.statusText}`});
           console.log(response);
         }
       }
       this.loader = false;
     }
   },
+  computed: {
+    ...mapState(['isOk', 'alertMsg'])
+  },
+  mounted() {
+
+  }
 }
 </script>
 

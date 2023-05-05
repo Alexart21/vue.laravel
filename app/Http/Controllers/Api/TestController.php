@@ -26,39 +26,25 @@ class TestController extends Controller
         /*var_dump($data);
         die;*/
         return response()->json(['data' => $data]);
-        return response()->json([
+        /* return response()->json([
             'data' => [
                 [
 
-                       'Понедельник',
+                   [
+                    'string' => 'понедельник',
+                    'timestamp' => 1111111111111,
+                   ],
 
-
-                         '08:00 - 09:00',
-
-                    '09:00 - 10:00',
-
-                   '10:00 - 11:00',
-
-                    '12:00 - 13:00',
-
-                    '14:00 - 15:00',
-
+                    [
+                        'isActive' => true,
+                        'time' => '00:00 - 00:00',
+                    ],
+                    [
+                      'isActive' => true,
+                       'time' => '00:00 - 00:00',
+                    ],
                 ],
-                [
-                    'Вторник',
-
-                   '08:00 - 09:00',
-
-                   '09:00 - 10:00',
-
-                    '10:00 - 11:00',
-
-                    '12:00 - 13:00',
-
-                     '14:00 - 15:00',
-
-                ],
-            ]
-        ]);
+                ]
+        ]); */
     }
 }

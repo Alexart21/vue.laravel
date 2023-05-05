@@ -1,22 +1,23 @@
 <template>
   <span v-if="loader">loader...</span>
   <button @click="refresh()">refresh token</button>
-  <div v-if="statusText" :class="[isOk ? 'success' : 'danger']">{{ statusText }}</div>
+  <div v-if="alertMsg" :class="[isOk ? 'success' : 'danger']">{{ alertMsg }}</div>
 </template>
 
 <script>
+import {mapMutations, mapActions, mapState} from "vuex";
 export default {
   data() {
     return {
       loader: false,
-      isOk: true,
-      statusText: '',
     }
   },
   methods: {
+    ...mapMutations(['clearMsgs']),
+    ...mapActions(['alert']),
     async refresh() {
       this.loader = true;
-      this.statusText = '';
+      this.clearMsgs();
       this.user = null;
       let url = '/api/auth/refresh';
       let token = localStorage.getItem('access_token');
@@ -30,19 +31,23 @@ export default {
       });
       if (response.ok) {
         let result = await response.json();
-        this.isOk = true;
-        this.statusText = 'Ok';
+        this.alert({type: 'success', msg: 'Ok!'});
         console.log(result);
         // пришел токен сохрани его
         localStorage.setItem('access_token', result.access_token);
         localStorage.setItem('token_type', result.token_type);
       } else {
-        this.isOk = false;
-        this.statusText = `${response.status} ${response.statusText}`;
+        this.alert({type: 'error', msg: `${response.status} ${response.statusText}`});
         console.log(response);
       }
       this.loader = false;
     }
+  },
+  computed: {
+    ...mapState(['isOk', 'alertMsg'])
+  },
+  mounted() {
+
   }
 }
 </script>
